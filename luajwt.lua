@@ -1,11 +1,11 @@
-local cjson  = require 'cjson'
+local json  = require 'lunajson'
 local base64 = require 'base64'
-local crypto = require 'crypto'
+local hmac = require 'openssl.hmac'
 
 local alg_sign = {
-	['HS256'] = function(data, key) return crypto.hmac.digest('sha256', data, key, true) end,
-	['HS384'] = function(data, key) return crypto.hmac.digest('sha384', data, key, true) end,
-	['HS512'] = function(data, key) return crypto.hmac.digest('sha512', data, key, true) end,
+        ['HS256'] = function(data, key) return hmac.new(key,"sha256"):final(data) end,
+        ['HS384'] = function(data, key) return hmac.new(key,"sha384"):final(data) end,
+        ['HS512'] = function(data, key) return hmac.new(key,"sha512"):final(data) end,
 }
 
 local alg_verify = {
@@ -72,8 +72,8 @@ function M.encode(data, key, alg)
 	local header = { typ='JWT', alg=alg }
 
 	local segments = {
-		b64_encode(cjson.encode(header)),
-		b64_encode(cjson.encode(data))
+		b64_encode(json.encode(header)),
+		b64_encode(json.encode(data))
 	}
 
 	local signing_input = table.concat(segments, ".")
@@ -100,8 +100,8 @@ function M.decode(data, key, verify)
 
 	local ok, header, body, sig = pcall(function ()
 
-		return	cjson.decode(b64_decode(headerb64)), 
-			cjson.decode(b64_decode(bodyb64)),
+		return	json.decode(b64_decode(headerb64)), 
+			json.decode(b64_decode(bodyb64)),
 			b64_decode(sigb64)
 	end)	
 
